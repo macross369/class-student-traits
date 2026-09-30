@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生特質全記錄系統 - 雲端即時同步版</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sunny: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              200: '#fde68a',
+              300: '#fcd34d',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f'
+            },
+            warm: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fef3c7;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #fcd34d;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+    .sunny-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px -2px rgba(245, 158, 11, 0.08), 0 2px 6px -1px rgba(245, 158, 11, 0.04);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-amber-50 via-orange-50/50 to-yellow-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 頂部溫暖陽光風格導覽列 -->
+  <header class="bg-white/95 border-b border-amber-200/80 sticky top-0 z-30 shadow-sm backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" id="nav-brand">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center shadow-md shadow-amber-500/25">
+          <i class="fa-solid fa-sun text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base sm:text-lg text-amber-950 leading-tight">學生特質全記錄系統</h1>
+            <span id="sync-status-badge" class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span> 連線中...
+            </span>
+          </div>
+          <p class="text-xs text-amber-800/70">個別化觀察紀錄與多載具即時協作平台</p>
+        </div>
+      </div>
+      
+      <!-- 頂部操作按鈕組 -->
+      <div class="flex items-center space-x-2">
+        <!-- 回到功能目錄按鈕 -->
+        <button id="btn-goto-portal" class="text-xs sm:text-sm px-3 py-2 bg-amber-100/70 hover:bg-amber-200/80 text-amber-900 font-medium rounded-xl transition-all flex items-center gap-1.5 border border-amber-200">
+          <i class="fa-solid fa-compass"></i>
+          <span>功能目錄</span>
+        </button>
+
+        <!-- 登出/上鎖按鈕 (未解鎖時隱藏) -->
+        <button id="btn-lock-system" class="hidden text-xs sm:text-sm px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-medium rounded-xl transition-all flex items-center gap-1.5 border border-rose-200">
+          <i class="fa-solid fa-lock"></i>
+          <span class="hidden sm:inline">安全鎖定</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 頁面 1：功能目錄首頁 (入口閘道與功能說明) -->
+  <section id="view-portal" class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 flex flex-col justify-center animate-in fade-in duration-200">
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-200/60 border border-amber-300/80 text-amber-900 text-xs font-semibold mb-3">
+        <i class="fa-solid fa-shield-halved text-amber-700"></i>
+        <span>個資保護與安全存取管控中心</span>
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-amber-950 tracking-tight">學生輔導特質觀察系統目錄</h2>
+      <p class="text-sm text-amber-800/80 mt-2 leading-relaxed">
+        本系統整合學生學習、思維、性格與人際四大維度特質。為恪遵個資保護規範，需輸入密碼解鎖後方可進入各項功能檢視與編輯學生名冊。
+      </p>
+    </div>
+
+    <!-- 功能項目卡片目錄清單 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      
+      <!-- 功能 1：特質紀錄與備註卡 -->
+      <div class="portal-card sunny-card p-6 rounded-2xl border border-amber-200/80 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-clipboard-check"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            個別特質勾選與事例備註
+            <i class="fa-solid fa-lock text-xs text-amber-600/70"></i>
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            依據學習態度、思維能力、性格心態、人際合作四類別進行特質檢核，並在勾選後針對具體課堂事例進行文字記錄。
+          </p>
+        </div>
+        <button class="btn-portal-access mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5" data-target="workspace">
+          <span>解鎖進入特質記錄</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- 功能 2：總覽評語自動生成 -->
+      <div class="portal-card sunny-card p-6 rounded-2xl border border-amber-200/80 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            綜合觀察評語自動生成
+            <i class="fa-solid fa-lock text-xs text-amber-600/70"></i>
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            彙整學生所有勾選特質與老師填寫的具體事例備註，一鍵自動梳理為文字通順、段落分明的期末綜合評語報告。
+          </p>
+        </div>
+        <button class="btn-portal-access mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5" data-target="report">
+          <span>解鎖進入評語報告</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- 功能 3：名冊增刪與修改 -->
+      <div class="portal-card sunny-card p-6 rounded-2xl border border-amber-200/80 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-yellow-100 text-yellow-800 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-user-group"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            學生名冊管理 (增刪改)
+            <i class="fa-solid fa-lock text-xs text-amber-600/70"></i>
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            維護班級學生姓名、座號與分組資料。支援自由新增學生、編輯現有學生或批次管理學生名單。
+          </p>
+        </div>
+        <button class="btn-portal-access mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5" data-target="workspace">
+          <span>解鎖管理名冊</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- 功能 4：即時跨載具自動同步 -->
+      <div class="portal-card sunny-card p-6 rounded-2xl border border-amber-200/80 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            Firebase 跨載具即時同步
+            <i class="fa-solid fa-lock text-xs text-amber-600/70"></i>
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            已成功串接 Firebase 雲端資料庫。手機、平板與電腦多螢協作，任一裝置勾選特質或填寫事例，毫秒級即時更新。
+          </p>
+        </div>
+        <button class="btn-portal-access mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 hover:from-emerald-700 hover:to-teal-700 transition-all flex items-center justify-center gap-1.5" data-target="workspace">
+          <span>解鎖進入記錄中心</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- 功能 5：資料匯入與匯出備份 -->
+      <div class="portal-card sunny-card p-6 rounded-2xl border border-amber-200/80 hover:border-amber-400 hover:shadow-lg hover:shadow-amber-500/10 transition-all flex flex-col justify-between group">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center text-xl mb-4 group-hover:scale-105 transition-transform">
+            <i class="fa-solid fa-file-arrow-up"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            備份匯入與匯出專區
+            <i class="fa-solid fa-lock text-xs text-amber-600/70"></i>
+          </h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            提供離線 JSON 檔案完整匯出備份，亦支援隨時上傳備份檔匯入還原，確保記錄萬無一失。
+          </p>
+        </div>
+        <button class="btn-portal-access mt-5 w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-xs shadow-md shadow-amber-500/20 hover:from-amber-600 hover:to-orange-600 transition-all flex items-center justify-center gap-1.5" data-target="backup">
+          <span>解鎖匯入/匯出</span>
+          <i class="fa-solid fa-arrow-right text-[10px]"></i>
+        </button>
+      </div>
+
+      <!-- 功能 6：快速登入解鎖入口 -->
+      <div class="sunny-card p-6 rounded-2xl border-2 border-dashed border-amber-300 flex flex-col justify-between bg-amber-50/60">
+        <div>
+          <div class="w-12 h-12 rounded-2xl bg-amber-200/70 text-amber-900 flex items-center justify-center text-xl mb-4">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <h3 class="text-lg font-bold text-amber-950 mb-1.5">授權身分驗證</h3>
+          <p class="text-xs text-amber-800/80 leading-relaxed">
+            點擊下方驗證按鈕輸入授權密碼，即可全面解鎖系統所有學生特質紀錄與操作面板。
+          </p>
+        </div>
+        <button id="btn-direct-unlock" class="mt-5 w-full py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white font-semibold text-xs shadow-md transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-unlock"></i>
+          <span>身分密碼解鎖</span>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 頁面 2：主工作區 (解鎖後顯示之完整學生特質觀察記錄) -->
+  <section id="view-workspace" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex flex-col lg:flex-row gap-6 animate-in fade-in duration-200">
+    
+    <!-- 左側欄：學生名單選單 -->
+    <aside class="w-full lg:w-80 flex-shrink-0 flex flex-col gap-4">
+      <div class="sunny-card rounded-2xl border border-amber-200 p-4 flex flex-col h-[calc(100vh-140px)] sticky top-20 shadow-sm">
+        
+        <!-- 頂部計數與操作 -->
+        <div class="flex items-center justify-between pb-3 border-b border-amber-100">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-amber-900">學生名單</span>
+            <span id="student-count-badge" class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">6</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button id="btn-add-student-quick" class="text-xs font-semibold px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> 新增
+            </button>
+          </div>
+        </div>
+
+        <!-- 學生搜尋欄位 -->
+        <div class="mt-3 relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-amber-500 text-xs"></i>
+          <input type="text" id="search-student-input" placeholder="搜尋姓名或座號..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-amber-50/60 border border-amber-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all text-slate-800">
+        </div>
+
+        <!-- 學生清單動態注入處 -->
+        <div id="student-list" class="flex-1 overflow-y-auto mt-3 pr-1 space-y-2">
+          <!-- 由 JS 渲染 -->
+        </div>
+
+        <!-- 側邊底部匯入/匯出捷徑 -->
+        <div class="pt-3 border-t border-amber-100 mt-auto flex items-center justify-between gap-2">
+          <button id="btn-trigger-import" class="flex-1 py-1.5 px-2 text-[11px] font-medium text-amber-900 bg-amber-100/70 hover:bg-amber-200 rounded-lg transition-colors flex items-center justify-center gap-1 border border-amber-200">
+            <i class="fa-solid fa-file-import"></i> 匯入備份
+          </button>
+          <input type="file" id="import-file-input" accept=".json" class="hidden">
+          <button id="btn-trigger-export" class="flex-1 py-1.5 px-2 text-[11px] font-medium text-amber-900 bg-amber-100/70 hover:bg-amber-200 rounded-lg transition-colors flex items-center justify-center gap-1 border border-amber-200">
+            <i class="fa-solid fa-file-export"></i> 匯出備份
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 右側欄：特質勾選與事例備註填寫區 -->
+    <main class="flex-1 flex flex-col gap-6">
+      
+      <!-- 當前學生標題資訊卡 -->
+      <div class="sunny-card rounded-2xl border border-amber-200 p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div id="current-student-avatar" class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-400 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-amber-500/20">
+              陳
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 id="current-student-name" class="text-xl font-bold text-slate-900">陳品睿</h2>
+                <span id="current-student-seat" class="px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-200">座號 01</span>
+                <span id="current-student-group" class="px-2 py-0.5 rounded-md text-xs font-medium bg-orange-100 text-orange-900 border border-orange-200">第 1 組</span>
+              </div>
+              <p id="current-student-summary-text" class="text-xs text-amber-800/80 mt-1">已記錄 4 個特質項目</p>
+            </div>
+          </div>
+
+          <!-- 動作按鈕 -->
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btn-open-report-view" class="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl shadow-sm transition-all flex items-center gap-1">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> 產生評語
+            </button>
+            <button id="btn-edit-student" class="px-3 py-1.5 text-xs font-medium text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl transition-colors flex items-center gap-1 border border-amber-200">
+              <i class="fa-solid fa-pen-to-square"></i> 編輯名冊
+            </button>
+            <button id="btn-delete-student" class="px-3 py-1.5 text-xs font-medium text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors flex items-center gap-1 border border-rose-200">
+              <i class="fa-solid fa-trash-can"></i> 刪除
+            </button>
+          </div>
+        </div>
+
+        <!-- 類別快速篩選切換籤 -->
+        <div class="flex items-center gap-2 overflow-x-auto pt-4 mt-4 border-t border-amber-100 text-xs">
+          <span class="text-amber-900/60 font-semibold whitespace-nowrap">類別篩選：</span>
+          <button class="category-filter-btn active px-3 py-1 rounded-full bg-amber-500 text-white font-semibold transition-all shadow-xs" data-target="all">全部特質</button>
+          <button class="category-filter-btn px-3 py-1 rounded-full bg-amber-100/70 hover:bg-amber-200 text-amber-900 font-medium transition-all" data-target="cat-learning">學習與態度</button>
+          <button class="category-filter-btn px-3 py-1 rounded-full bg-amber-100/70 hover:bg-amber-200 text-amber-900 font-medium transition-all" data-target="cat-thinking">思維與能力</button>
+          <button class="category-filter-btn px-3 py-1 rounded-full bg-amber-100/70 hover:bg-amber-200 text-amber-900 font-medium transition-all" data-target="cat-personality">性格與心態</button>
+          <button class="category-filter-btn px-3 py-1 rounded-full bg-amber-100/70 hover:bg-amber-200 text-amber-900 font-medium transition-all" data-target="cat-interpersonal">人際與團隊</button>
+        </div>
+      </div>
+
+      <!-- 四大分類特質容器 -->
+      <div id="traits-container" class="space-y-6">
+        <!-- 由 JS 動態生成特質項目卡與備註輸入框 -->
+      </div>
+    </main>
+  </section>
+
+  <!-- 模態框 1：密碼登入驗證（無任何密碼提示文字） -->
+  <div id="password-modal" class="fixed inset-0 z-50 bg-amber-950/40 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-amber-200 animate-in fade-in zoom-in-95 duration-150">
+      <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+        <i class="fa-solid fa-lock"></i>
+      </div>
+      <h3 class="text-center text-lg font-bold text-slate-800 mb-1">個資存取身分驗證</h3>
+      <p class="text-center text-xs text-slate-500 mb-5">請輸入系統存取密碼以查看學生特質紀錄與名冊。</p>
+      
+      <form id="password-form" class="space-y-4">
+        <div>
+          <input 
+            type="password" 
+            id="password-input" 
+            autocomplete="current-password"
+            placeholder="請輸入存取密碼" 
+            class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white text-center font-mono tracking-wider transition-all"
+            required
+          >
+          <p id="password-error-msg" class="hidden text-xs text-rose-600 mt-1.5 text-center font-medium">密碼錯誤，請重新輸入</p>
+        </div>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btn-cancel-password" class="flex-1 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
+            返回目錄
+          </button>
+          <button type="submit" class="flex-1 py-2 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md shadow-amber-500/20 transition-colors">
+            確認驗證
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 模態框 2：新增 / 編輯學生資料 -->
+  <div id="student-modal" class="fixed inset-0 z-50 bg-amber-950/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-amber-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="px-6 py-4 bg-amber-50/80 border-b border-amber-100 flex items-center justify-between">
+        <h3 id="student-modal-title" class="text-base font-bold text-amber-950">新增學生名冊</h3>
+        <button id="btn-close-student-modal" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="student-form" class="p-6 space-y-4">
+        <input type="hidden" id="modal-student-id">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">姓名 <span class="text-rose-500">*</span></label>
+          <input type="text" id="modal-student-name" required placeholder="例如：林俊傑" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">座號 / 學號 <span class="text-rose-500">*</span></label>
+          <input type="text" id="modal-student-seat" required placeholder="例如：07" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">分組或備記</label>
+          <input type="text" id="modal-student-group" placeholder="例如：第 1 組" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div class="flex justify-end gap-2 pt-3">
+          <button type="button" id="btn-cancel-student-modal" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">取消</button>
+          <button type="submit" class="px-5 py-2 text-xs font-semibold text-white bg-amber-500 hover:bg-amber-600 rounded-xl shadow-md shadow-amber-500/20 transition-colors">儲存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 模態框 3：自訂確認對話方塊 -->
+  <div id="confirm-modal" class="fixed inset-0 z-50 bg-amber-950/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl text-center border border-amber-200">
+      <div class="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4 text-xl">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirm-title" class="text-base font-bold text-slate-800 mb-2">確認執行？</h3>
+      <p id="confirm-message" class="text-xs text-slate-500 mb-6">此動作將無法還原，請確認是否繼續。</p>
+      <div class="flex justify-center gap-3">
+        <button id="btn-confirm-cancel" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">取消</button>
+        <button id="btn-confirm-ok" class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-sm transition-colors">確認執行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模態框 4：特質總覽報告與評語生成 -->
+  <div id="report-modal" class="fixed inset-0 z-50 bg-amber-950/40 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-amber-200">
+      <div class="px-6 py-4 border-b border-amber-100 flex items-center justify-between bg-amber-50/70">
+        <div>
+          <h3 class="text-base font-bold text-amber-950">特質觀察總覽與文字評語報告</h3>
+          <p id="report-student-subtitle" class="text-xs text-amber-800/80">學生特質觀察彙整</p>
+        </div>
+        <button id="btn-close-report" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4 flex-1">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">已勾選特質項目</label>
+          <div id="report-traits-tags" class="flex flex-wrap gap-1.5 p-3 bg-amber-50/40 rounded-2xl border border-amber-200 min-h-[50px] text-xs">
+            <!-- 標籤注入 -->
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold text-slate-700">自動生成期末/輔導段落評語（已融合具體事例備註）</label>
+            <button id="btn-copy-report" class="text-xs text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1 bg-amber-100 px-2.5 py-1 rounded-lg">
+              <i class="fa-regular fa-copy"></i> 複製評語文字
+            </button>
+          </div>
+          <textarea id="report-generated-text" rows="8" class="w-full p-3.5 text-xs leading-relaxed border border-slate-300 rounded-2xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono text-slate-700"></textarea>
+        </div>
+      </div>
+      <div class="px-6 py-3 bg-amber-50/40 border-t border-amber-100 flex justify-end">
+        <button id="btn-close-report-footer" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl">關閉視窗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 浮動通知提示 (Toast) -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl text-xs font-medium">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-amber-400"></i>
+    <span id="toast-message">操作已完成</span>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    /* ★★★ 已嵌入您提供的 Firebase 專案設定金鑰 ★★★ */
+    const defaultFirebaseConfig = {
+      apiKey: "AIzaSyDt3Yf31tfYKKUKQdX0Gn9G9gC_5MzLeMA",
+      authDomain: "student-traits-tracker.firebaseapp.com",
+      projectId: "student-traits-tracker",
+      storageBucket: "student-traits-tracker.firebasestorage.app",
+      messagingSenderId: "603759514735",
+      appId: "1:603759514735:web:28091137ae2539ebe2e99a"
+    };
+
+    /* 特質結構資料定義（包含 4 個分類與完整說明文案） */
+    const TRAIT_CATEGORIES = [
+      {
+        id: "cat-learning",
+        title: "學習與態度",
+        icon: "fa-book-open-reader",
+        color: "amber",
+        traits: [
+          { name: "勤奮", desc: "學習刻苦不怠惰，願意投入大量時間與精力累積知識。" },
+          { name: "專注", desc: "課堂上心無旁鶩，能長時間維持高效的注意力。" },
+          { name: "自律", desc: "能自主規劃時間與進度，無需他人督促即可完成任務。" },
+          { name: "積極", desc: "面對課業與新任務態度正向，不拖延且勇於爭取機會。" },
+          { name: "認真", desc: "對待作業與測驗態度嚴謹，腳踏實地不敷衍。" },
+          { name: "好學", desc: "對新知保持強烈求知慾，樂於課外自主延伸學習。" },
+          { name: "主動", desc: "遇到問題會自行尋找資源或向教師發問，不被動等待答案。" },
+          { name: "踏實", desc: "按部就班打好學科基礎，做事循序漸進不浮躁。" }
+        ]
+      },
+      {
+        id: "cat-thinking",
+        title: "思維與能力",
+        icon: "fa-brain",
+        color: "orange",
+        traits: [
+          { name: "聰穎", desc: "理解力強，能快速吸收並掌握複雜的新概念。" },
+          { name: "敏捷", desc: "思維反應迅速，能靈活應對各種情境與問題。" },
+          { name: "好奇", desc: "喜歡探究事物背後的原理，不滿足於表面答案。" },
+          { name: "富創造力", desc: "想法獨特，常能在專題或討論中提出新穎觀點。" },
+          { name: "靈活", desc: "思考不拘泥於單一解法，能隨狀況調整策略。" },
+          { name: "獨立", desc: "具備自主思考與決策能力，不盲從同儕。" },
+          { name: "嚴謹", desc: "推導與分析過程邏輯清晰，對數據與細節要求精準。" },
+          { name: "細心", desc: "觀察入微，完成任務或做實驗時精確且不易出錯。" }
+        ]
+      },
+      {
+        id: "cat-personality",
+        title: "性格與心態",
+        icon: "fa-seedling",
+        color: "yellow",
+        traits: [
+          { name: "具韌性", desc: "面對挫折與失敗時能快速復原，堅持不輕言放棄。" },
+          { name: "沉穩", desc: "情緒穩定，遇到突發狀況或考試壓力時能冷靜處理。" },
+          { name: "自信", desc: "對自身能力有合理肯定，敢於公開表達個人看法。" },
+          { name: "開朗", desc: "性格樂觀豁達，能為班級與學習環境帶來正面能量。" },
+          { name: "謙虛", desc: "即使表現優異仍保持低調，樂於向他人取經。" },
+          { name: "勇於挑戰", desc: "不害怕高難度課題，樂於走出舒適圈拓展極限。" },
+          { name: "坦率", desc: "態度真誠直率，能虛心接受同儕與教師的建言。" }
+        ]
+      },
+      {
+        id: "cat-interpersonal",
+        title: "人際與團隊",
+        icon: "fa-users-line",
+        color: "emerald",
+        traits: [
+          { name: "有責任感", desc: "對分配到的團體任務負責到底，值得團隊信賴。" },
+          { name: "具合作精神", desc: "善於團隊溝通，能配合分工並協助同儕達成目標。" },
+          { name: "熱心", desc: "樂於助人，常主動輔導或解答同學課業上的疑難。" },
+          { name: "友善", desc: "待人隨和親切，容易與不同性格的同學打成一片。" },
+          { name: "溫和", desc: "溝通語氣平易近人，能有效化解團隊中的摩擦。" },
+          { name: "具同理心", desc: "能站在他人立場思考，體諒同儕的需求與感受。" },
+          { name: "具領導力", desc: "善於凝聚團體共識，能帶領小組朝共同目標邁進。" }
+        ]
+      }
+    ];
+
+    /* 系統預設 6 位學生 */
+    const DEFAULT_STUDENTS = [
+      {
+        id: "stu-1",
+        name: "陳品睿",
+        seat: "01",
+        group: "第 1 組",
+        traits: {
+          "專注": { checked: true, note: "數學課堂上極為專注，解題步驟詳盡" },
+          "自律": { checked: true, note: "每週例行聯絡簿與自主複習規劃確實" },
+          "聰穎": { checked: true, note: "對邏輯推理課題反應特別敏銳" },
+          "具合作精神": { checked: true, note: "科展分工能主動協助同組同學" }
+        }
+      },
+      {
+        id: "stu-2",
+        name: "林宥廷",
+        seat: "02",
+        group: "第 1 組",
+        traits: {
+          "好學": { checked: true, note: "課後常至圖書館借閱科學書籍" },
+          "富創造力": { checked: true, note: "美術與專案報告作品設計極富新意" },
+          "開朗": { checked: true, note: "班上活力的來源，帶動課堂參與熱度" },
+          "熱心": { checked: true, note: "常主動協助衛生股長維護教室整潔" }
+        }
+      },
+      {
+        id: "stu-3",
+        name: "黃雅涵",
+        seat: "03",
+        group: "第 2 組",
+        traits: {
+          "認真": { checked: true, note: "作業字跡工整端正，訂正徹底" },
+          "嚴謹": { checked: true, note: "自然實驗紀錄數據極為準確" },
+          "細心": { checked: true, note: "常能主動檢查出小組報告的文字疏漏" },
+          "溫和": { checked: true, note: "與同儕交流親切有禮，從未與人起爭執" }
+        }
+      },
+      {
+        id: "stu-4",
+        name: "張家豪",
+        seat: "04",
+        group: "第 2 組",
+        traits: {
+          "積極": { checked: true, note: "運動會接力賽積極帶頭練習" },
+          "具韌性": { checked: true, note: "段考成績失利後能檢討反思並迅速重拾節奏" },
+          "勇於挑戰": { checked: true, note: "代表班級參加校內演說競賽" },
+          "具領導力": { checked: true, note: "身為副班長能妥善督導班級常規" }
+        }
+      },
+      {
+        id: "stu-5",
+        name: "許佩珊",
+        seat: "05",
+        group: "第 3 組",
+        traits: {
+          "勤奮": { checked: true, note: "早自習皆準時抵達並進行晨讀" },
+          "踏實": { checked: true, note: "基礎詞彙背誦穩定紮實" },
+          "沉穩": { checked: true, note: "遭遇突發停電等狀況時沉著配合老師引導" },
+          "有責任感": { checked: true, note: "擔任值日生職務負責盡職" }
+        }
+      },
+      {
+        id: "stu-6",
+        name: "劉宇軒",
+        seat: "06",
+        group: "第 3 組",
+        traits: {
+          "好奇": { checked: true, note: "對歷史人物事件總喜歡追問背後緣由" },
+          "獨立": { checked: true, note: "專案研究時能獨立擬定訪談大綱" },
+          "自信": { checked: true, note: "口頭簡報時台風穩健，條理清晰" },
+          "具同理心": { checked: true, note: "同儕身體不適時主動代送保健室並予關懷" }
+        }
+      }
+    ];
+
+    const CORRECT_PASSWORD = "Rccbok6869";
+    const STORAGE_KEY_FALLBACK_DATA = 'stt_local_backup_students';
+    const sharedAppId = 'student-traits-tracker';
+
+    // 應用程式狀態
+    let isAuthenticated = false;
+    let students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
+    let currentStudentId = "stu-1";
+    let pendingConfirmAction = null;
+    let pendingTargetView = 'workspace';
+    let db = null;
+    let auth = null;
+    let unsubscribeSync = null;
+
+    // 優先載入本機快取
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY_FALLBACK_DATA);
+      if (cached) {
+        const parsedCached = JSON.parse(cached);
+        if (Array.isArray(parsedCached) && parsedCached.length > 0) {
+          students = parsedCached;
+        }
+      }
+    } catch (e) {
+      console.warn("讀取本機快取提示：", e);
+    }
+
+    async function initCloudSync() {
+      try {
+        let activeConfig = defaultFirebaseConfig;
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+          try {
+            activeConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config;
+          } catch (e) {
+            activeConfig = defaultFirebaseConfig;
+          }
+        }
+
+        // 避免 duplicate-app 重複初始化錯誤
+        let app;
+        const existingApps = getApps();
+        if (existingApps.length > 0) {
+          app = getApp();
+        } else {
+          app = initializeApp(activeConfig);
+        }
+
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // 進行身分驗證
+        try {
+          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } else {
+            await signInAnonymously(auth);
+          }
+        } catch (authErr) {
+          console.warn("Firebase 身分驗證提示（將使用本機模式持續保存）：", authErr);
+          updateSyncIndicator(false, "本機已儲存 (雲端認證未啟用)");
+          return;
+        }
+
+        const user = auth.currentUser;
+        if (!user) {
+          updateSyncIndicator(false, "本機已儲存");
+          return;
+        }
+
+        if (unsubscribeSync) {
+          unsubscribeSync();
+        }
+
+        const syncDocRef = doc(db, 'artifacts', sharedAppId, 'public', 'data', 'students_shared', 'records');
+
+        // 即時監聽遠端資料變化
+        unsubscribeSync = onSnapshot(syncDocRef, (snapshot) => {
+          if (snapshot.exists()) {
+            const remoteData = snapshot.data();
+            if (remoteData && remoteData.studentsList) {
+              try {
+                const parsed = JSON.parse(remoteData.studentsList);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  students = parsed;
+                  localStorage.setItem(STORAGE_KEY_FALLBACK_DATA, JSON.stringify(students));
+                  if (!students.find(s => s.id === currentStudentId)) {
+                    currentStudentId = students[0].id;
+                  }
+                  renderStudentList();
+                  renderCurrentStudentTraits();
+                  updateSyncIndicator(true, "即時雲端同步中");
+                }
+              } catch (e) {
+                console.error("解析雲端資料失敗", e);
+              }
+            }
+          } else {
+            // 雲端尚無資料時，自動將初始名冊上傳
+            pushCloudData();
+            updateSyncIndicator(true, "即時雲端同步中");
+          }
+        }, (error) => {
+          console.warn("即時監聽提示（改以本機持續保存）：", error);
+          updateSyncIndicator(false, "本機已儲存");
+        });
+
+      } catch (err) {
+        console.warn("初始化雲端同步提示（改以本機持續保存）：", err);
+        updateSyncIndicator(false, "本機已儲存");
+      }
+    }
+
+    // 雙軌同步保存：保證本地 LocalStorage 隨時儲存，雲端在可用時同步寫入
+    async function pushCloudData() {
+      try {
+        localStorage.setItem(STORAGE_KEY_FALLBACK_DATA, JSON.stringify(students));
+      } catch (e) {
+        console.warn("本機快取儲存失敗", e);
+      }
+
+      if (!db || !auth || !auth.currentUser) return;
+      try {
+        const syncDocRef = doc(db, 'artifacts', sharedAppId, 'public', 'data', 'students_shared', 'records');
+        await setDoc(syncDocRef, {
+          studentsList: JSON.stringify(students),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+        updateSyncIndicator(true);
+      } catch (err) {
+        console.warn("同步至雲端提示（已保存於本機）：", err);
+      }
+    }
+
+    function updateSyncIndicator(isOnline, customText = '') {
+      const badge = document.getElementById('sync-status-badge');
+      if (!badge) return;
+      if (isOnline) {
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${customText || "即時雲端同步中"}`;
+        badge.className = "hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200";
+      } else {
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> ${customText || "本機已儲存"}`;
+        badge.className = "hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200";
+      }
+    }
+
+    function showPortalView() {
+      document.getElementById('view-portal').classList.remove('hidden');
+      document.getElementById('view-workspace').classList.add('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showWorkspaceView() {
+      document.getElementById('view-portal').classList.add('hidden');
+      document.getElementById('view-workspace').classList.remove('hidden');
+      document.getElementById('btn-lock-system').classList.remove('hidden');
+      renderStudentList();
+      renderCurrentStudentTraits();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function requestAccess(target = 'workspace') {
+      if (isAuthenticated) {
+        if (target === 'report') {
+          showWorkspaceView();
+          openReportModal();
+        } else if (target === 'backup') {
+          showWorkspaceView();
+          showToast("已解鎖！可在左下角進行備份匯出或匯入。");
+        } else {
+          showWorkspaceView();
+        }
+      } else {
+        pendingTargetView = target;
+        openPasswordModal();
+      }
+    }
+
+    function openPasswordModal() {
+      const modal = document.getElementById('password-modal');
+      const input = document.getElementById('password-input');
+      const errMsg = document.getElementById('password-error-msg');
+      input.value = '';
+      errMsg.classList.add('hidden');
+      modal.classList.remove('hidden');
+      input.focus();
+    }
+
+    function closePasswordModal() {
+      document.getElementById('password-modal').classList.add('hidden');
+    }
+
+    // 密碼驗證提交 (無任何密碼提示文字)
+    document.getElementById('password-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inputVal = document.getElementById('password-input').value;
+      const errMsg = document.getElementById('password-error-msg');
+
+      if (inputVal === CORRECT_PASSWORD) {
+        isAuthenticated = true;
+        closePasswordModal();
+        showToast("身分驗證成功，歡迎使用");
+        if (pendingTargetView === 'report') {
+          showWorkspaceView();
+          openReportModal();
+        } else {
+          showWorkspaceView();
+        }
+      } else {
+        errMsg.classList.remove('hidden');
+        document.getElementById('password-input').focus();
+      }
+    });
+
+    document.getElementById('btn-cancel-password').addEventListener('click', closePasswordModal);
+    document.getElementById('btn-direct-unlock').addEventListener('click', () => requestAccess('workspace'));
+
+    // 綁定各目錄卡片的解鎖按鈕
+    document.querySelectorAll('.btn-portal-access').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target || 'workspace';
+        requestAccess(target);
+      });
+    });
+
+    // 導覽按鈕：功能目錄
+    document.getElementById('btn-goto-portal').addEventListener('click', () => {
+      showPortalView();
+    });
+
+    document.getElementById('nav-brand').addEventListener('click', () => {
+      showPortalView();
+    });
+
+    // 安全鎖定
+    document.getElementById('btn-lock-system').addEventListener('click', () => {
+      isAuthenticated = false;
+      document.getElementById('btn-lock-system').classList.add('hidden');
+      showPortalView();
+      showToast("系統已安全鎖定");
+    });
+
+    function getCurrentStudent() {
+      return students.find(s => s.id === currentStudentId) || students[0] || null;
+    }
+
+    function renderStudentList(filterText = '') {
+      const listContainer = document.getElementById('student-list');
+      const countBadge = document.getElementById('student-count-badge');
+      if (!listContainer) return;
+      listContainer.innerHTML = '';
+
+      const query = filterText.trim().toLowerCase();
+      const filtered = students.filter(s => 
+        s.name.toLowerCase().includes(query) || s.seat.includes(query)
+      );
+
+      if (countBadge) countBadge.textContent = students.length;
+
+      if (filtered.length === 0) {
+        listContainer.innerHTML = `
+          <div class="text-center py-8 text-amber-800/60 text-xs">
+            查無符合的學生名單
+          </div>
+        `;
+        return;
+      }
+
+      filtered.forEach(student => {
+        const isSelected = student.id === currentStudentId;
+        const traitsObj = student.traits || {};
+        const checkedCount = Object.values(traitsObj).filter(t => t.checked).length;
+
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-2xl cursor-pointer transition-all border flex items-center justify-between group ${
+          isSelected 
+            ? 'bg-amber-100/90 border-amber-300 text-amber-950 shadow-sm' 
+            : 'bg-white/80 border-amber-100 hover:border-amber-200 hover:bg-amber-50/70 text-slate-700'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-sm ${
+              isSelected ? 'bg-amber-500 text-white shadow-xs' : 'bg-amber-100 text-amber-800 group-hover:bg-amber-200'
+            }">
+              ${escapeHtml(student.name.charAt(0))}
+            </div>
+            <div>
+              <div class="font-bold text-sm flex items-center gap-1.5">
+                <span>${escapeHtml(student.name)}</span>
+                <span class="text-[11px] px-1.5 py-0.5 rounded-md bg-white/80 text-amber-900 border border-amber-200 font-semibold">#${escapeHtml(student.seat)}</span>
+              </div>
+              <div class="text-[11px] text-amber-800/70">
+                ${escapeHtml(student.group || '一般分組')}
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full ${
+              checkedCount > 0 ? 'bg-amber-200/90 text-amber-900' : 'bg-slate-100 text-slate-400'
+            }">
+              ${checkedCount} 特質
+            </span>
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          if (currentStudentId !== student.id) {
+            currentStudentId = student.id;
+            renderStudentList(filterText);
+            renderCurrentStudentTraits();
+          }
+        });
+
+        listContainer.appendChild(card);
+      });
+    }
+
+    function renderCurrentStudentTraits() {
+      const student = getCurrentStudent();
+      const container = document.getElementById('traits-container');
+      const nameEl = document.getElementById('current-student-name');
+      const seatEl = document.getElementById('current-student-seat');
+      const groupEl = document.getElementById('current-student-group');
+      const avatarEl = document.getElementById('current-student-avatar');
+      const summaryTextEl = document.getElementById('current-student-summary-text');
+
+      if (!student) {
+        if (nameEl) nameEl.textContent = "未選取學生";
+        if (seatEl) seatEl.textContent = "--";
+        if (groupEl) groupEl.textContent = "--";
+        if (avatarEl) avatarEl.textContent = "?";
+        if (summaryTextEl) summaryTextEl.textContent = "請於名單選擇或新增學生";
+        if (container) {
+          container.innerHTML = `
+            <div class="sunny-card rounded-2xl p-12 text-center text-amber-800/60 border border-amber-200">
+              <i class="fa-solid fa-users text-4xl mb-3 text-amber-400"></i>
+              <p>目前無選取的學生資料，請點擊左側「新增」開始記錄。</p>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      // 更新抬頭資訊
+      nameEl.textContent = student.name;
+      seatEl.textContent = `座號 ${student.seat}`;
+      groupEl.textContent = student.group || '未分組';
+      avatarEl.textContent = student.name.charAt(0);
+
+      const traitsObj = student.traits || {};
+      const checkedCount = Object.values(traitsObj).filter(t => t.checked).length;
+      summaryTextEl.textContent = `已記錄 ${checkedCount} 項特質觀察與課堂具體事例`;
+
+      container.innerHTML = '';
+
+      // 產生四大類別特質勾選與備註區塊
+      TRAIT_CATEGORIES.forEach(category => {
+        const catSection = document.createElement('div');
+        catSection.id = category.id;
+        catSection.className = "category-section sunny-card rounded-3xl border border-amber-200/90 overflow-hidden shadow-sm";
+
+        let badgeStyle = "bg-amber-100 text-amber-800 border-amber-200";
+        if (category.color === "orange") badgeStyle = "bg-orange-100 text-orange-800 border-orange-200";
+        if (category.color === "yellow") badgeStyle = "bg-yellow-100 text-yellow-800 border-yellow-200";
+        if (category.color === "emerald") badgeStyle = "bg-emerald-100 text-emerald-800 border-emerald-200";
+
+        const catTraits = category.traits.map(t => t.name);
+        const catCheckedCount = catTraits.filter(name => traitsObj[name]?.checked).length;
+
+        catSection.innerHTML = `
+          <div class="px-6 py-4 bg-amber-50/80 border-b border-amber-100 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="w-9 h-9 rounded-xl flex items-center justify-center border ${badgeStyle} shadow-xs">
+                <i class="fa-solid ${category.icon} text-sm"></i>
+              </span>
+              <div>
+                <h3 class="font-bold text-slate-900 text-base">${category.title}</h3>
+              </div>
+            </div>
+            <span class="text-xs font-semibold px-3 py-1 rounded-full bg-white border border-amber-200 text-amber-900 shadow-2xs">
+              已勾選 ${catCheckedCount} / ${category.traits.length}
+            </span>
+          </div>
+
+          <!-- 特質卡片網格 -->
+          <div class="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${category.traits.map(trait => {
+              const traitData = traitsObj[trait.name] || { checked: false, note: '' };
+              const isChecked = traitData.checked;
+              const noteText = traitData.note || '';
+
+              return `
+                <div class="trait-card p-4 rounded-2xl border transition-all ${
+                  isChecked 
+                    ? 'border-amber-400 bg-amber-50/80 shadow-xs' 
+                    : 'border-slate-200 bg-white/90 hover:border-amber-200'
+                }" data-trait="${trait.name}">
+                  <div class="flex items-start gap-3">
+                    <div class="pt-0.5">
+                      <input 
+                        type="checkbox" 
+                        id="chk-${student.id}-${trait.name}" 
+                        class="trait-checkbox w-4 h-4 rounded text-amber-500 focus:ring-amber-400 border-slate-300 cursor-pointer accent-amber-500" 
+                        data-trait="${trait.name}"
+                        ${isChecked ? 'checked' : ''}
+                      >
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <label for="chk-${student.id}-${trait.name}" class="font-bold text-sm text-slate-800 cursor-pointer hover:text-amber-700 flex items-center gap-1.5">
+                        ${trait.name}
+                        ${isChecked ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-500 inline-block"></span>' : ''}
+                      </label>
+                      <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                        ${trait.desc}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- 勾選特質時的備註填寫欄 -->
+                  <div class="mt-3 pt-3 border-t ${isChecked ? 'border-amber-200' : 'border-slate-100'}">
+                    <div class="flex items-center justify-between mb-1.5">
+                      <span class="text-[11px] font-semibold ${isChecked ? 'text-amber-900' : 'text-slate-400'}">
+                        <i class="fa-regular fa-comment-dots mr-1 text-amber-600"></i>備註 / 具體行為事例註記：
+                      </span>
+                      ${noteText ? '<span class="text-[10px] font-medium text-emerald-700"><i class="fa-solid fa-check mr-0.5"></i>已儲存</span>' : ''}
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="${isChecked ? '輸入此特質的具體行為或課堂實例...' : '勾選此特質後即可填寫行為觀察備註...'}" 
+                      value="${escapeHtml(noteText)}"
+                      class="trait-note-input w-full px-3 py-1.5 text-xs rounded-xl border transition-all ${
+                        isChecked 
+                          ? 'border-amber-300 bg-white focus:ring-2 focus:ring-amber-500 focus:outline-none text-slate-800' 
+                          : 'border-slate-200 bg-slate-50 text-slate-400 focus:outline-none'
+                      }"
+                      data-trait="${trait.name}"
+                      ${!isChecked ? 'disabled' : ''}
+                    >
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        container.appendChild(catSection);
+      });
+
+      bindTraitEvents();
+    }
+
+    function bindTraitEvents() {
+      const student = getCurrentStudent();
+      if (!student) return;
+      if (!student.traits) student.traits = {};
+
+      document.querySelectorAll('.trait-checkbox').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const traitName = e.target.dataset.trait;
+          const isChecked = e.target.checked;
+
+          if (!student.traits[traitName]) {
+            student.traits[traitName] = { checked: false, note: '' };
+          }
+          student.traits[traitName].checked = isChecked;
+
+          renderStudentList(document.getElementById('search-student-input').value);
+          renderCurrentStudentTraits();
+          pushCloudData();
+          showToast(`已${isChecked ? '記錄' : '取消'}特質：${traitName}`);
+        });
+      });
+
+      document.querySelectorAll('.trait-note-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+          const traitName = e.target.dataset.trait;
+          const noteVal = e.target.value;
+
+          if (!student.traits[traitName]) {
+            student.traits[traitName] = { checked: true, note: '' };
+          }
+          student.traits[traitName].note = noteVal;
+          pushCloudData();
+        });
+      });
+    }
+
+    const studentModal = document.getElementById('student-modal');
+    const studentForm = document.getElementById('student-form');
+    const modalTitle = document.getElementById('student-modal-title');
+    const modalId = document.getElementById('modal-student-id');
+    const modalName = document.getElementById('modal-student-name');
+    const modalSeat = document.getElementById('modal-student-seat');
+    const modalGroup = document.getElementById('modal-student-group');
+
+    function openStudentModal(isEdit = false) {
+      if (isEdit) {
+        const student = getCurrentStudent();
+        if (!student) return;
+        modalTitle.textContent = "修改學生資料";
+        modalId.value = student.id;
+        modalName.value = student.name;
+        modalSeat.value = student.seat;
+        modalGroup.value = student.group || '';
+      } else {
+        modalTitle.textContent = "新增學生";
+        modalId.value = '';
+        modalName.value = '';
+        const maxSeat = students.reduce((max, s) => {
+          const num = parseInt(s.seat, 10);
+          return !isNaN(num) && num > max ? num : max;
+        }, 0);
+        modalSeat.value = String(maxSeat + 1).padStart(2, '0');
+        modalGroup.value = '第 1 組';
+      }
+      studentModal.classList.remove('hidden');
+      modalName.focus();
+    }
+
+    function closeStudentModal() {
+      studentModal.classList.add('hidden');
+    }
+
+    studentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = modalId.value;
+      const name = modalName.value.trim();
+      const seat = modalSeat.value.trim();
+      const group = modalGroup.value.trim();
+
+      if (!name || !seat) return;
+
+      if (id) {
+        const student = students.find(s => s.id === id);
+        if (student) {
+          student.name = name;
+          student.seat = seat;
+          student.group = group;
+          showToast(`已成功更新 ${name} 的資料`);
+        }
+      } else {
+        const newStudent = {
+          id: 'stu-' + Date.now(),
+          name: name,
+          seat: seat,
+          group: group,
+          traits: {}
+        };
+        students.push(newStudent);
+        currentStudentId = newStudent.id;
+        showToast(`已新增學生：${name}`);
+      }
+
+      pushCloudData();
+      renderStudentList();
+      renderCurrentStudentTraits();
+      closeStudentModal();
+    });
+
+    document.getElementById('btn-close-student-modal').addEventListener('click', closeStudentModal);
+    document.getElementById('btn-cancel-student-modal').addEventListener('click', closeStudentModal);
+    document.getElementById('btn-add-student-quick').addEventListener('click', () => openStudentModal(false));
+    document.getElementById('btn-edit-student').addEventListener('click', () => openStudentModal(true));
+
+    // 自訂確認對話方塊
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmTitle = document.getElementById('confirm-title');
+    const confirmMessage = document.getElementById('confirm-message');
+    const btnConfirmOk = document.getElementById('btn-confirm-ok');
+    const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
+
+    function showConfirm(title, message, onConfirm) {
+      confirmTitle.textContent = title;
+      confirmMessage.textContent = message;
+      pendingConfirmAction = onConfirm;
+      confirmModal.classList.remove('hidden');
+    }
+
+    function closeConfirm() {
+      confirmModal.classList.add('hidden');
+      pendingConfirmAction = null;
+    }
+
+    btnConfirmCancel.addEventListener('click', closeConfirm);
+    btnConfirmOk.addEventListener('click', () => {
+      if (typeof pendingConfirmAction === 'function') {
+        pendingConfirmAction();
+      }
+      closeConfirm();
+    });
+
+    // 刪除學生操作
+    document.getElementById('btn-delete-student').addEventListener('click', () => {
+      const student = getCurrentStudent();
+      if (!student) return;
+
+      showConfirm(
+        `確認刪除學生 ${student.name}？`,
+        `刪除後該學生的特質勾選與行為事例備註將一併自雲端清除。`,
+        () => {
+          students = students.filter(s => s.id !== student.id);
+          currentStudentId = students.length > 0 ? students[0].id : null;
+          pushCloudData();
+          renderStudentList();
+          renderCurrentStudentTraits();
+          showToast(`已刪除學生「${student.name}」`);
+        }
+      );
+    });
+
+    // 匯出 JSON
+    document.getElementById('btn-trigger-export').addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(students, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `學生特質全記錄備份_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast("已成功匯出完整備份檔案");
+    });
+
+    // 匯入 JSON
+    const importFileInput = document.getElementById('import-file-input');
+    document.getElementById('btn-trigger-import').addEventListener('click', () => {
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported) && imported.length > 0) {
+            showConfirm(
+              "確認匯入備份資料？",
+              `檔案內含 ${imported.length} 位學生資料，匯入後將覆蓋目前清單並同步至所有載具。`,
+              () => {
+                students = imported;
+                currentStudentId = students[0].id;
+                pushCloudData();
+                renderStudentList();
+                renderCurrentStudentTraits();
+                showToast(`成功匯入 ${imported.length} 位學生資料`);
+              }
+            );
+          } else {
+            showToast("匯入失敗：檔案格式不正確");
+          }
+        } catch (err) {
+          showToast("檔案讀取解析失敗");
+        }
+      };
+      reader.readAsText(file);
+      importFileInput.value = '';
+    });
+
+    const reportModal = document.getElementById('report-modal');
+    const reportSubtitle = document.getElementById('report-student-subtitle');
+    const reportTagsContainer = document.getElementById('report-traits-tags');
+    const reportGeneratedText = document.getElementById('report-generated-text');
+
+    function openReportModal() {
+      const student = getCurrentStudent();
+      if (!student) {
+        showToast("請先選擇一位學生");
+        return;
+      }
+
+      reportSubtitle.textContent = `${student.name} (座號 ${student.seat}) 特質觀察與綜合評語報告`;
+      reportTagsContainer.innerHTML = '';
+
+      const traitsObj = student.traits || {};
+      const activeTraits = [];
+
+      TRAIT_CATEGORIES.forEach(category => {
+        category.traits.forEach(t => {
+          if (traitsObj[t.name] && traitsObj[t.name].checked) {
+            activeTraits.push({
+              category: category.title,
+              name: t.name,
+              desc: t.desc,
+              note: traitsObj[t.name].note || ''
+            });
+          }
+        });
+      });
+
+      if (activeTraits.length === 0) {
+        reportTagsContainer.innerHTML = '<span class="text-amber-800/60 text-xs">目前尚未勾選任何特質項目</span>';
+        reportGeneratedText.value = `${student.name} 同學目前尚未登錄特質觀察項目。建議在日常課堂互動中多加觀察，並於各項特質進行勾選與事例備註。`;
+      } else {
+        activeTraits.forEach(item => {
+          const tag = document.createElement('span');
+          tag.className = "inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-white border border-amber-200 text-slate-800 shadow-2xs text-xs";
+          tag.innerHTML = `
+            <span class="font-bold text-amber-600">${escapeHtml(item.name)}</span>
+            <span class="text-[10px] text-amber-800/60">(${escapeHtml(item.category)})</span>
+          `;
+          reportTagsContainer.appendChild(tag);
+        });
+
+        const catMap = {};
+        activeTraits.forEach(t => {
+          if (!catMap[t.category]) catMap[t.category] = [];
+          catMap[t.category].push(t);
+        });
+
+        let summaryLines = [];
+        summaryLines.push(`【${student.name} 同學 特質觀察與綜合輔導評語】\n座號：${student.seat} | 組別：${student.group || '一般'}\n`);
+        
+        summaryLines.push(`一、主要特質總結：`);
+        const traitNamesStr = activeTraits.map(t => t.name).join('、');
+        summaryLines.push(`該生在各領域觀察中展現「${traitNamesStr}」等特質亮點。\n`);
+
+        summaryLines.push(`二、分項觀察與具體生活事例：`);
+        for (const [catName, list] of Object.entries(catMap)) {
+          summaryLines.push(`● ${catName}：`);
+          list.forEach(item => {
+            let line = `  - [${item.name}]：${item.desc}`;
+            if (item.note && item.note.trim()) {
+              line += `（觀察備註：${item.note.trim()}）`;
+            }
+            summaryLines.push(line);
+          });
+        }
+
+        summaryLines.push(`\n三、教師期勉與綜合建議：`);
+        summaryLines.push(`該生在校園常規與同儕互動中深具潛力，期盼未來能持續發揮「${activeTraits[0].name}」等長處，百尺竿頭更進一步。`);
+
+        reportGeneratedText.value = summaryLines.join('\n');
+      }
+
+      reportModal.classList.remove('hidden');
+    }
+
+    document.getElementById('btn-open-report-view').addEventListener('click', openReportModal);
+    document.getElementById('btn-close-report').addEventListener('click', () => reportModal.classList.add('hidden'));
+    document.getElementById('btn-close-report-footer').addEventListener('click', () => reportModal.classList.add('hidden'));
+
+    // 複製文字至剪貼簿
+    document.getElementById('btn-copy-report').addEventListener('click', async () => {
+      const textarea = document.getElementById('report-generated-text');
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(textarea.value);
+        } else {
+          document.execCommand('copy');
+        }
+        showToast("已複製評語文字至剪貼簿！");
+      } catch (err) {
+        document.execCommand('copy');
+        showToast("已複製評語文字至剪貼簿！");
+      }
+    });
+
+    document.getElementById('search-student-input').addEventListener('input', (e) => {
+      renderStudentList(e.target.value);
+    });
+
+    // 類別過濾切換
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.category-filter-btn').forEach(b => {
+          b.classList.remove('active', 'bg-amber-500', 'text-white', 'shadow-xs');
+          b.classList.add('bg-amber-100/70', 'text-amber-900');
+        });
+        btn.classList.add('active', 'bg-amber-500', 'text-white', 'shadow-xs');
+        btn.classList.remove('bg-amber-100/70', 'text-amber-900');
+
+        const target = btn.dataset.target;
+        document.querySelectorAll('.category-section').forEach(sec => {
+          sec.style.display = (target === 'all' || sec.id === target) ? 'block' : 'none';
+        });
+      });
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      showPortalView();
+      initCloudSync();
+    });
+  </script>
+</body>
+</html>
