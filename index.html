@@ -687,10 +687,21 @@
 
         // 即時監聽遠端資料變化
         unsubscribeSync = onSnapshot(syncDocRef, (snapshot) => {
+          // ★ 防中斷機制 1：若為當前載具正在寫入中的暫態 (hasPendingWrites)，不重新渲染 DOM
+          if (snapshot.metadata && snapshot.metadata.hasPendingWrites) {
+            return;
+          }
+
           if (snapshot.exists()) {
             const remoteData = snapshot.data();
             if (remoteData && remoteData.studentsList) {
               try {
+                // ★ 防中斷機制 2：若雲端資料與本機完全相同，跳過重新渲染
+                if (remoteData.studentsList === JSON.stringify(students)) {
+                  updateSyncIndicator(true, "即時雲端同步中");
+                  return;
+                }
+
                 const parsed = JSON.parse(remoteData.studentsList);
                 if (Array.isArray(parsed) && parsed.length > 0) {
                   students = parsed;
@@ -936,6 +947,16 @@
       const avatarEl = document.getElementById('current-student-avatar');
       const summaryTextEl = document.getElementById('current-student-summary-text');
 
+      // ★ 防中斷機制 3：若使用者目前正聚焦在某個備註輸入框，記住其特質名稱與游標位置
+      let activeTraitName = null;
+      let selectionStart = 0;
+      let selectionEnd = 0;
+      if (document.activeElement && document.activeElement.classList.contains('trait-note-input')) {
+        activeTraitName = document.activeElement.dataset.trait;
+        selectionStart = document.activeElement.selectionStart;
+        selectionEnd = document.activeElement.selectionEnd;
+      }
+
       if (!student) {
         if (nameEl) nameEl.textContent = "未選取學生";
         if (seatEl) seatEl.textContent = "--";
@@ -1059,7 +1080,20 @@
       });
 
       bindTraitEvents();
+
+      // ★ 若之前有焦點，在此恢復焦點與游標位置
+      if (activeTraitName) {
+        const targetInput = container.querySelector(`.trait-note-input[data-trait="${activeTraitName}"]`);
+        if (targetInput) {
+          targetInput.focus();
+          try {
+            targetInput.setSelectionRange(selectionStart, selectionEnd);
+          } catch (e) {}
+        }
+      }
     }
+
+    let noteSyncDebounceTimer = null;
 
     function bindTraitEvents() {
       const student = getCurrentStudent();
@@ -1084,6 +1118,7 @@
       });
 
       document.querySelectorAll('.trait-note-input').forEach(input => {
+        // 鍵入文字時：立即更新本機記憶體與 LocalStorage，並使用 Debounce 延遲推播至 Firebase
         input.addEventListener('input', (e) => {
           const traitName = e.target.dataset.trait;
           const noteVal = e.target.value;
@@ -1092,6 +1127,22 @@
             student.traits[traitName] = { checked: true, note: '' };
           }
           student.traits[traitName].note = noteVal;
+
+          // 立即更新本機快取
+          try {
+            localStorage.setItem(STORAGE_KEY_FALLBACK_DATA, JSON.stringify(students));
+          } catch (err) {}
+
+          // 延遲 600ms 推送，避免每打一個字就觸發雲端監聽中斷打字
+          clearTimeout(noteSyncDebounceTimer);
+          noteSyncDebounceTimer = setTimeout(() => {
+            pushCloudData();
+          }, 600);
+        });
+
+        // 移開輸入框（blur）時立即推送確認儲存
+        input.addEventListener('blur', () => {
+          clearTimeout(noteSyncDebounceTimer);
           pushCloudData();
         });
       });
